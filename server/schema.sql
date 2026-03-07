@@ -40,12 +40,12 @@ CREATE TABLE IF NOT EXISTS bus_stops (
     FOREIGN KEY (bus_id) REFERENCES buses(id) ON DELETE CASCADE
 );
 
--- Mock stops for Bus #1
+-- Mock stops for Bus #1 (Hyderabad to Vijayawada)
 INSERT INTO bus_stops (bus_id, stop_name, lat, lng, stop_order) VALUES 
-(1, 'Central Terminal', 40.7128, -74.0060, 1),
-(1, 'Business District', 40.7306, -73.9352, 2),
-(1, 'University Hub', 40.7589, -73.9851, 3),
-(1, 'Suburban Square', 40.8000, -73.9000, 4);
+(1, 'Hyderabad MGBS', 17.3730, 78.4760, 1),
+(1, 'Suryapet', 17.1500, 79.6200, 2),
+(1, 'Nandigama', 16.7700, 80.2900, 3),
+(1, 'Vijayawada', 16.5060, 80.6480, 4);
 
 -- Table for Bookings
 CREATE TABLE IF NOT EXISTS bookings (
@@ -85,7 +85,8 @@ CREATE TABLE IF NOT EXISTS passengers (
 
 INSERT INTO buses (name, type, departure_city, arrival_city, departure_time, arrival_time, price, current_lat, current_lng, driver_name, driver_phone, amenities) 
 VALUES 
-('Royal Express', 'Luxury A/C Sleeper', 'New York', 'Boston', '21:00:00', '05:30:00', 1250.00, 40.7128, -74.0060, 'John Smith', '1234567890', 'WiFi, AC, Bed, Charging Point'),
-('Smart Travels', 'Smart A/C Seater', 'Chicago', 'Detroit', '22:30:00', '07:15:00', 850.00, 41.8781, -87.6298, 'Mike Ross', '0987654321', 'AC, Water, Charging Point'),
-('Green Lines', 'Electric Luxury Sleeper', 'Miami', 'Orlando', '19:45:00', '04:00:00', 1400.00, 25.7617, -80.1918, 'Sarah Connor', '5556667777', 'WiFi, AC, Bed, Snacks');
+('TGSRTC Guda', 'Super Luxury A/C', 'Hyderabad', 'Vijayawada', '21:00:00', '03:30:00', 850.00, 17.3730, 78.4760, 'Ramesh Kumar', '9848012345', 'WiFi, AC, Charging Point'),
+('Orange Travels', 'Volo Multi-Axle A/C', 'Bangalore', 'Chennai', '22:30:00', '05:15:00', 1200.00, 12.9716, 77.5946, 'Suresh Babu', '9848054321', 'AC, Water, Snacks, Charging Point'),
+('Neeta Travels', 'Scania A/C Sleeper', 'Mumbai', 'Pune', '19:45:00', '23:00:00', 600.00, 19.0760, 72.8777, 'Vijay Singh', '9555667777', 'WiFi, AC, Bed, Snacks');
+
 UPDATE passengers SET scanned_at = NULL, is_active = FALSE;

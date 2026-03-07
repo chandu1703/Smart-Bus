@@ -33,8 +33,8 @@ const DriverDashboard = () => {
         totalSeats: 32,
         availableSeats: 32,
         boardedCount: 0,
-        currentStop: 'Main Terminal',
-        nextStop: 'Central Square',
+        currentStop: 'Hyderabad MGBS',
+        nextStop: 'Suryapet',
         dropNextStop: 0,
         boardNextStop: 0
     });
@@ -43,7 +43,7 @@ const DriverDashboard = () => {
     const [message, setMessage] = useState(null);
     const [isScanning, setIsScanning] = useState(false);
     const [scannedPassenger, setScannedPassenger] = useState(null);
-    const [currentPos, setCurrentPos] = useState({ lat: 0, lng: 0 });
+    const [currentPos, setCurrentPos] = useState({ lat: 17.3730, lng: 78.4760 });
     const [occupiedSeats, setOccupiedSeats] = useState([]);
     const [busName, setBusName] = useState('Loading Bus...');
     const [selectedSeatDetails, setSelectedSeatDetails] = useState(null);

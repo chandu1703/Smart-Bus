@@ -31,13 +31,27 @@ const db = mysql.createPool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: 4000,
+    port: process.env.DB_PORT || 4000,
     ssl: {
-        rejectUnauthorized: true
+        rejectUnauthorized: true,
+        // TiDB Cloud often requires the CA certificate or just minVersion: 'TLSv1.2'
+        minVersion: 'TLSv1.2'
     },
     waitForConnections: true,
-    connectionLimit: 10
+    connectionLimit: 10,
+    connectTimeout: 10000 // 10s timeout for production
 });
+
+// Test connection and log errors
+db.getConnection()
+    .then(conn => {
+        console.log("✅ Successfully connected to TiDB Cloud");
+        conn.release();
+    })
+    .catch(err => {
+        console.error("❌ DATABASE CONNECTION ERROR:", err.message);
+        console.error("Check your .env variables and TiDB Cloud IP Whitelist.");
+    });
 
 // Helper to calculate distance in KM
 const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -296,7 +310,10 @@ app.get("/api/buses/:busId/occupied-seats", async (req, res) => {
             return 0; // Default fallback
         };
 
-        const [allPassengers] = await db.query("SELECT * FROM passengers WHERE bus_id = ? AND dropped_at IS NULL", [busId]);
+        const [allPassengers] = await db.query(
+            "SELECT * FROM passengers WHERE bus_id = ? AND is_active = 1 AND dropped_at IS NULL",
+            [busId]
+        );
 
         if (from && to) {
             const searchFromOrder = getOrder(from);
