@@ -5,7 +5,20 @@ import { resolve } from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'rewrite-driver',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url.includes('/driver/') || req.url === '/driver') {
+            req.url = '/driver.html';
+          }
+          next();
+        });
+      },
+    }
+  ],
   build: {
     rollupOptions: {
       input: {

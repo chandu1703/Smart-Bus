@@ -12,13 +12,18 @@ import {
     Clock,
     UserCheck,
     AlertCircle,
-    Settings
+    Settings,
+    Navigation, // Added for GPS prompt
+    ArrowUpRight, // Added for potential future use or if part of the new UI
+    CheckCircle, // Added for potential future use or if part of the new UI
+    WifiOff // Added for offline banner
 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { Html5Qrcode } from 'html5-qrcode';
 import { API_BASE_URL } from '../api/config';
+import { useAuth } from '../context/AuthContext';
 
 const socket = io(API_BASE_URL, {
     transports: ['websocket'],
@@ -26,6 +31,7 @@ const socket = io(API_BASE_URL, {
 });
 
 const DriverDashboard = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const query = new URLSearchParams(window.location.search);
     const BUS_ID = query.get('busId');
@@ -87,15 +93,33 @@ const DriverDashboard = () => {
     };
 
     const [gpsActive, setGpsActive] = useState(false);
+    const [gpsPermissionStatus, setGpsPermissionStatus] = useState('prompt'); // prompt, granted, denied
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [socketConnected, setSocketConnected] = useState(socket.connected);
 
     // 2. Geolocation / Simulation Loop
     useEffect(() => {
         let watchId = null;
         let simInterval = null;
 
+        const handleSocketConnect = () => setSocketConnected(true);
+        const handleSocketDisconnect = () => setSocketConnected(false);
+        socket.on('connect', handleSocketConnect);
+        socket.on('disconnect', handleSocketDisconnect);
+
+        // Check initial permission
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' }).then(res => {
+                setGpsPermissionStatus(res.state);
+                res.onchange = () => setGpsPermissionStatus(res.state);
+            });
+        }
+
         const handleUpdate = (lat, lng) => {
             setCurrentPos({ lat, lng });
-            socket.emit('update-location', { busId: BUS_ID, lat, lng });
+            if (navigator.onLine) {
+                socket.emit('update-location', { busId: BUS_ID, lat, lng });
+            }
             fetchStats(lat, lng);
             setGpsActive(true);
         };
@@ -113,16 +137,22 @@ const DriverDashboard = () => {
                     const curLat = prev.lat || startLat;
                     const curLng = prev.lng || startLng;
 
-                    // Slow crawl simulation
                     const nextLat = curLat + (endLat - startLat) * 0.0001;
                     const nextLng = curLng + (endLng - startLng) * 0.0001;
 
-                    socket.emit('update-location', { busId: BUS_ID, lat: nextLat, lng: nextLng });
+                    if (navigator.onLine) {
+                        socket.emit('update-location', { busId: BUS_ID, lat: nextLat, lng: nextLng });
+                    }
                     fetchStats(nextLat, nextLng);
                     return { lat: nextLat, lng: nextLng };
                 });
             }, 10000);
         };
+
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
 
         if (navigator.geolocation) {
             watchId = navigator.geolocation.watchPosition(
@@ -131,10 +161,12 @@ const DriverDashboard = () => {
                         clearInterval(simInterval);
                         simInterval = null;
                     }
+                    setGpsPermissionStatus('granted');
                     handleUpdate(pos.coords.latitude, pos.coords.longitude);
                 },
                 (err) => {
                     console.warn("GPS Access Denied/Error, using simulation fallback.");
+                    if (err.code === 1) setGpsPermissionStatus('denied');
                     setGpsActive(false);
                     startSimulation();
                 },
@@ -147,6 +179,10 @@ const DriverDashboard = () => {
         return () => {
             if (watchId) navigator.geolocation.clearWatch(watchId);
             if (simInterval) clearInterval(simInterval);
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+            socket.off('connect', handleSocketConnect);
+            socket.off('disconnect', handleSocketDisconnect);
         };
     }, [BUS_ID]);
 
@@ -227,34 +263,19 @@ const DriverDashboard = () => {
         await handleBoardWithId(ticketInput);
     };
 
-    if (loading) {
-        return (
-            <div className="loading-screen" style={{
-                height: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
-                color: 'white'
-            }}>
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                    style={{ border: '4px solid rgba(255,255,255,0.1)', borderTop: '4px solid #6366F1', borderRadius: '50%', width: 50, height: 50 }}
-                />
-                <p style={{ marginTop: '1rem', fontWeight: 500, opacity: 0.8 }}>Initializing Dashboard...</p>
-            </div>
-        );
-    }
+    const requestGpsAgain = () => {
+        window.location.reload();
+    };
+
+    if (loading) return (
+        <div style={{ padding: '4rem', textAlign: 'center' }}>
+            <div className="animate-spin" style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #6366F1', borderRadius: '50%', margin: '0 auto' }}></div>
+            <p style={{ marginTop: '1rem', color: '#64748b' }}>Waking up fleet systems...</p>
+        </div>
+    );
 
     return (
-        <div className="dashboard-container" style={{
-            minHeight: '100vh',
-            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-            padding: '2rem',
-            fontFamily: "'Outfit', sans-serif"
-        }}>
+        <div className="driver-dashboard" style={{ background: '#f8fafc', minHeight: '100vh', paddingBottom: '3rem' }}>
             <style>{`
                 .glass-card {
                     background: rgba(255, 255, 255, 0.8);
@@ -275,7 +296,7 @@ const DriverDashboard = () => {
                     border-radius: 12px;
                     display: flex;
                     alignItems: center;
-                    justify-content: center;
+                    justifyContent: center;
                 }
                 .dashboard-header {
                     margin-bottom: 2.5rem;
@@ -329,6 +350,66 @@ const DriverDashboard = () => {
                 }
             `}</style>
 
+            {/* 📶 Network Status Banner */}
+            {(!isOnline || !socketConnected) && (
+                <motion.div
+                    initial={{ y: -50 }} animate={{ y: 0 }}
+                    style={{ background: '#EF4444', color: 'white', padding: '0.6rem', textAlign: 'center', fontWeight: 600, fontSize: '0.85rem', position: 'sticky', top: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                    <WifiOff size={16} />
+                    {!isOnline ? 'No Mobile Network. Updates will resume when back online.' : 'Waiting for Fleet Server. Check mobile data.'}
+                </motion.div>
+            )}
+
+            {/* 🛰️ GPS Permission Overlay */}
+            {gpsPermissionStatus === 'denied' && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.95)', zIndex: 10001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                        style={{ background: 'white', padding: '2.5rem', borderRadius: '32px', textAlign: 'center', maxWidth: '400px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                    >
+                        <div style={{ background: '#FEE2E2', color: '#B91C1C', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                            <MapPin size={40} />
+                        </div>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem' }}>Location Access Denied</h2>
+                        <p style={{ color: '#64748B', lineHeight: 1.6, marginBottom: '2rem' }}>
+                            We need your GPS to share live tracking with passengers. Please enable <b>Location Services</b> in your phone settings and refresh this app.
+                        </p>
+                        <button
+                            onClick={requestGpsAgain}
+                            style={{ background: '#6366F1', color: 'white', border: 'none', width: '100%', padding: '1.2rem', borderRadius: '16px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(99, 102, 241, 0.4)' }}
+                        >
+                            I ENABLED IT, REFRESH NOW
+                        </button>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* 📍 First-time Prompt */}
+            {gpsPermissionStatus === 'prompt' && !gpsActive && (
+                <motion.div
+                    initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                    style={{ position: 'fixed', bottom: '20px', left: '20px', right: '20px', background: '#312E81', color: 'white', padding: '1.2rem', borderRadius: '20px', zIndex: 9999, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.2)', padding: '0.6rem', borderRadius: '12px' }}>
+                            <Navigation size={20} className="animate-pulse" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>Share Live Location?</div>
+                            <button
+                                onClick={() => {
+                                    navigator.geolocation.getCurrentPosition(() => setGpsPermissionStatus('granted'), (err) => console.log(err));
+                                }}
+                                style={{ background: 'white', color: '#312E81', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 800, fontSize: '0.8rem', marginTop: '0.4rem' }}
+                            >
+                                ACTIVATE GPS
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
             <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
                 <motion.div
                     initial={{ x: -20, opacity: 0 }}
@@ -363,11 +444,11 @@ const DriverDashboard = () => {
                     </button>
                     <div className="glass-card" style={{ padding: '0.6rem 1.2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ textAlign: 'right' }}>
-                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Captain</p>
-                            <p style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9rem' }}>Smith</p>
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>{user?.role === 'admin' ? 'Administrator' : 'Captain'}</p>
+                            <p style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9rem' }}>{user?.name || 'Loading...'}</p>
                         </div>
-                        <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800 }}>
-                            JS
+                        <div style={{ width: 36, height: 36, borderRadius: '10px', background: '#6366F1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '0.75rem' }}>
+                            {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
                         </div>
                     </div>
                 </div>
@@ -818,7 +899,7 @@ const DriverDashboard = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 };
 
