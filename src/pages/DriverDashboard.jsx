@@ -11,7 +11,8 @@ import {
     Navigation2,
     Clock,
     UserCheck,
-    AlertCircle
+    AlertCircle,
+    Settings
 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -26,15 +27,22 @@ const socket = io(API_BASE_URL, {
 
 const DriverDashboard = () => {
     const navigate = useNavigate();
-    // Get busId from URL query or default to 1
     const query = new URLSearchParams(window.location.search);
-    const BUS_ID = query.get('busId') || 1;
+    const BUS_ID = query.get('busId');
+
+    // Redirect if no busId selected
+    useEffect(() => {
+        if (!BUS_ID) {
+            navigate('/');
+        }
+    }, [BUS_ID, navigate]);
+
     const [stats, setStats] = useState({
         totalSeats: 32,
         availableSeats: 32,
         boardedCount: 0,
-        currentStop: 'Hyderabad MGBS',
-        nextStop: 'Suryapet',
+        currentStop: 'Loading...',
+        nextStop: '—',
         dropNextStop: 0,
         boardNextStop: 0
     });
@@ -78,46 +86,67 @@ const DriverDashboard = () => {
         }
     };
 
-    // 2. Live Tracking & Geofencing
+    const [gpsActive, setGpsActive] = useState(false);
+
+    // 2. Geolocation / Simulation Loop
     useEffect(() => {
         let watchId = null;
+        let simInterval = null;
 
         const handleUpdate = (lat, lng) => {
             setCurrentPos({ lat, lng });
             socket.emit('update-location', { busId: BUS_ID, lat, lng });
             fetchStats(lat, lng);
+            setGpsActive(true);
+        };
+
+        const startSimulation = () => {
+            if (simInterval) return;
+            console.log("Starting GPS Simulation fallback...");
+            simInterval = setInterval(() => {
+                setCurrentPos(prev => {
+                    const startLat = 17.3850;
+                    const startLng = 78.4867;
+                    const endLat = 14.4426;
+                    const endLng = 79.9865;
+
+                    const curLat = prev.lat || startLat;
+                    const curLng = prev.lng || startLng;
+
+                    // Slow crawl simulation
+                    const nextLat = curLat + (endLat - startLat) * 0.0001;
+                    const nextLng = curLng + (endLng - startLng) * 0.0001;
+
+                    socket.emit('update-location', { busId: BUS_ID, lat: nextLat, lng: nextLng });
+                    fetchStats(nextLat, nextLng);
+                    return { lat: nextLat, lng: nextLng };
+                });
+            }, 10000);
         };
 
         if (navigator.geolocation) {
             watchId = navigator.geolocation.watchPosition(
                 (pos) => {
+                    if (simInterval) {
+                        clearInterval(simInterval);
+                        simInterval = null;
+                    }
                     handleUpdate(pos.coords.latitude, pos.coords.longitude);
                 },
                 (err) => {
-                    console.warn("GPS Access Denied/Error, using last known or default.");
+                    console.warn("GPS Access Denied/Error, using simulation fallback.");
+                    setGpsActive(false);
+                    startSimulation();
                 },
-                { enableHighAccuracy: true, maximumAge: 0 }
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
             );
+        } else {
+            startSimulation();
         }
-
-        // Fallback: Simulation for testing if they aren't actually moving
-        // Fallback: Simulation for testing if they aren't actually moving
-        const simInterval = setInterval(() => {
-            setCurrentPos(prev => {
-                if (prev.lat === 0) return { lat: 17.3850, lng: 78.4867 }; // Default to MGBS Hyd
-
-                // Slow crawl simulation towards Nellore
-                const nextLat = prev.lat + (14.4426 - 17.3850) * 0.0001;
-                const nextLng = prev.lng + (79.9865 - 78.4867) * 0.0001;
-
-                socket.emit('update-location', { busId: BUS_ID, lat: nextLat, lng: nextLng });
-                return { lat: nextLat, lng: nextLng };
-            });
-        }, 10000);
 
         return () => {
             if (watchId) navigator.geolocation.clearWatch(watchId);
-            clearInterval(simInterval);
+            if (simInterval) clearInterval(simInterval);
         };
     }, [BUS_ID]);
 
@@ -254,6 +283,19 @@ const DriverDashboard = () => {
                     justify-content: space-between;
                     alignItems: center;
                 }
+                @media (max-width: 1024px) {
+                    .main-grid { grid-template-columns: 1fr !important; }
+                    .dashboard-container { padding: 1.5rem !important; }
+                    .seat-map-layout { grid-template-columns: 1fr !important; }
+                    .seat-details-panel { position: static !important; }
+                }
+                @media (max-width: 768px) {
+                    .dashboard-header { flex-direction: column !important; align-items: flex-start !important; gap: 1.5rem !important; }
+                    .header-actions { width: 100% !important; flex-direction: column !important; }
+                    .header-actions > * { width: 100% !important; justify-content: center !important; }
+                    .stats-info-grid { grid-template-columns: 1fr !important; }
+                    .seat-grid-main { grid-template-columns: repeat(2, 1fr) !important; }
+                }
                 .action-button {
                     background: #6366F1;
                     color: white;
@@ -287,39 +329,48 @@ const DriverDashboard = () => {
                 }
             `}</style>
 
-            <header className="dashboard-header">
+            <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
                 <motion.div
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                 >
-                    <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#1e1b4b', letterSpacing: '-0.02em' }}>
-                        {busName} <span style={{ color: '#6366F1', fontSize: '1.2rem', fontWeight: 600 }}>• ID #{BUS_ID}</span>
+                    <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>
+                        Fleet Console <span style={{ color: '#6366F1' }}>Control</span>
                     </h1>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b' }}>
-                            <Clock size={16} />
-                            <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#64748B', fontSize: '0.9rem' }}>
+                        <span style={{ fontWeight: 600 }}>{busName}</span>
+                        <span>•</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: gpsActive ? '#dcfce7' : '#fee2e2', color: gpsActive ? '#166534' : '#ef4444', padding: '0.25rem 0.6rem', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: gpsActive ? '#22c55e' : '#ef4444', animation: gpsActive ? 'pulse 2s infinite' : 'none' }} />
+                            {gpsActive ? 'LIVE GPS' : 'GPS SIMULATED'}
                         </div>
-                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbd5e1' }} />
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981' }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} />
-                            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>System Live</span>
-                        </div>
-                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbd5e1' }} />
-                        <div style={{ color: '#6366F1', fontSize: '0.85rem', fontWeight: 600, background: 'rgba(99, 102, 241, 0.1)', padding: '2px 8px', borderRadius: '6px' }}>
-                            Tracking Active
-                        </div>
+                        <style>{`
+                            @keyframes pulse {
+                                0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+                                70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+                                100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+                            }
+                        `}</style>
                     </div>
                 </motion.div>
 
-                <motion.div
-                    initial={{ x: 20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    style={{ textAlign: 'right' }}
-                >
-                    <div style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 600 }}>BUS ID: #{BUS_ID}</div>
-                    <div style={{ fontSize: '1.1rem', color: '#1e1b4b', fontWeight: 700 }}>{busName}</div>
-                </motion.div>
+                <div className="header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <button
+                        onClick={() => navigate('/')}
+                        style={{ background: 'white', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.2rem', borderRadius: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem' }}
+                    >
+                        <Settings size={18} /> Change Bus
+                    </button>
+                    <div className="glass-card" style={{ padding: '0.6rem 1.2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ textAlign: 'right' }}>
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Captain</p>
+                            <p style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9rem' }}>Smith</p>
+                        </div>
+                        <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800 }}>
+                            JS
+                        </div>
+                    </div>
+                </div>
             </header>
 
             <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
@@ -448,7 +499,7 @@ const DriverDashboard = () => {
                     </div>
 
                     <div className="seat-map-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) 280px', gap: '2rem' }}>
-                        <div style={{
+                        <div className="seat-grid-main" style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(4, 1fr)',
                             gap: '12px',
@@ -498,7 +549,7 @@ const DriverDashboard = () => {
                         </div>
 
                         {/* SEAT DETAILS PANEL */}
-                        <div style={{ position: 'sticky', top: 0 }}>
+                        <div className="seat-details-panel" style={{ position: 'sticky', top: 0 }}>
                             {selectedSeatDetails ? (
                                 <motion.div
                                     initial={{ opacity: 0, x: 20 }}

@@ -101,6 +101,16 @@ const BusTracking = () => {
         };
     }, [busId]);
 
+    const [userLocation, setUserLocation] = useState(null);
+
+    useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+            });
+        }
+    }, []);
+
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#F8FAFC', padding: '1.5rem' }}>
             <style>{`
@@ -141,9 +151,27 @@ const BusTracking = () => {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
                         <FlyToLocation position={location} />
-                        <Marker position={location}>
+
+                        {/* Bus Marker */}
+                        <Marker position={location} icon={L.divIcon({
+                            className: 'custom-bus-marker',
+                            html: `<div style="background-color: var(--primary); color: white; padding: 5px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.2);">🚌</div>`,
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        })}>
                             <Popup>{busName || `Bus #${busId}`}</Popup>
                         </Marker>
+
+                        {/* User Marker */}
+                        {userLocation && (
+                            <Marker position={userLocation} icon={L.divIcon({
+                                className: 'custom-user-marker',
+                                html: `<div style="background-color: #10B981; width: 15px; height: 15px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px #10B981;"></div>`,
+                                iconSize: [15, 15]
+                            })}>
+                                <Popup>You are here</Popup>
+                            </Marker>
+                        )}
                     </MapContainer>
                 </div>
             )}

@@ -243,7 +243,7 @@ const Checkout = () => {
                         className="btn-primary"
                         style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', opacity: loading ? 0.7 : 1 }}
                     >
-                        {loading ? <><Loader2 className="animate-spin" size={20} /> SAVING TO MYSQL...</> : <><ShieldCheck size={20} /> PAY & GENERATE SMART TICKET <ArrowRight size={20} /></>}
+                        {loading ? <><Loader2 className="animate-spin" size={20} /> SAVING...</> : <><ShieldCheck size={20} /> PAY & GENERATE SMART TICKET <ArrowRight size={20} /></>}
                     </button>
                 </form>
             </div>

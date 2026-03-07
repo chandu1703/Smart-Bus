@@ -16,10 +16,14 @@ const Footer = () => {
             }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                        <span style={{ fontSize: '1.5rem', fontWeight: '800' }}>DriverConsole</span>
+                        <span style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                            {window.location.pathname.includes('driver') ? 'DriverConsole' : 'SmartBus'}
+                        </span>
                     </div>
                     <p style={{ color: '#94A3B8', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-                        Professional fleet management and driver operations system. Real-time occupancy tracking and journey analytics.
+                        {window.location.pathname.includes('driver')
+                            ? 'Professional fleet management and driver operations system. Real-time occupancy tracking and journey analytics.'
+                            : 'Experience the future of smart travel. Fast, secure, and reliable bus bookings with real-time tracking.'}
                     </p>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         <Facebook size={20} style={{ cursor: 'pointer' }} />
@@ -57,7 +61,7 @@ const Footer = () => {
                 color: '#64748B',
                 fontSize: '0.9rem'
             }}>
-                © {new Date().getFullYear()} DriverConsole Pro. All rights reserved.
+                © {new Date().getFullYear()} {window.location.pathname.includes('driver') ? 'DriverConsole Pro' : 'SmartBus Technologies'}. All rights reserved.
             </div>
         </footer>
     );

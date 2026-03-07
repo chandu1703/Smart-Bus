@@ -155,11 +155,18 @@ const BusList = () => {
                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{bus.reviews} reviews</p>
                                 </div>
 
-                                <div className="bus-card-price-section" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderLeft: '1px solid var(--border)', paddingLeft: '1.5rem' }}>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>STARTING FROM</p>
-                                    <p style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--secondary)', marginBottom: '0.5rem' }}>₹{bus.price}</p>
-                                    <button className="btn-primary" style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }}>SELECT SEATS</button>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.5rem', fontWeight: '700' }}>{bus.seatsAvailable} seats left</p>
+                                <div className="bus-card-price-section" style={{ textAlign: 'right', paddingLeft: '2rem', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 'bold' }}>STARTING FROM</p>
+                                    <h2 style={{ fontSize: '1.75rem', color: 'var(--primary)', marginBottom: '0.75rem' }}>₹{bus.price}</h2>
+                                    <button className="btn-primary" style={{ padding: '0.75rem 1.5rem', fontSize: '0.875rem' }}>SELECT SEATS</button>
+                                </div>
+                            </div>
+                            <div style={{ backgroundColor: '#F8FAFC', padding: '0.75rem 1.5rem', borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600' }}>
+                                    <Star size={14} fill="#F59E0B" color="#F59E0B" /> {bus.rating} ({bus.reviews} reviews)
+                                </div>
+                                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: bus.seatsAvailable < 10 ? '#DC2626' : '#10B981' }}>
+                                    {bus.seatsAvailable} Seats Left
                                 </div>
                             </div>
                         </motion.div>

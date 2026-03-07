@@ -10,17 +10,18 @@ const DriverSeatMap = () => {
     const [seats, setSeats] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const query = new URLSearchParams(window.location.search);
+    const BUS_ID = query.get('busId') || 1;
     const [selectedSeatDetails, setSelectedSeatDetails] = useState(null);
 
     useEffect(() => {
         fetchSeats();
         const interval = setInterval(fetchSeats, 5000);
         return () => clearInterval(interval);
-    }, []);
+    }, [BUS_ID]);
 
     const fetchSeats = async () => {
         try {
-            const BUS_ID = 1;
             const busRes = await axios.get(`${API_BASE_URL}/api/driver/stats/${BUS_ID}`);
             const totalSeats = busRes.data.totalSeats || 32;
 
@@ -33,7 +34,7 @@ const DriverSeatMap = () => {
                 return {
                     id: seatNum,
                     isOccupied: !!occInfo,
-                    isBoarded: !!(occInfo && occInfo.scanned_at),
+                    isBoarded: !!(occInfo && occInfo.scanned_at), // Boarded = Scanned
                     passenger: occInfo
                 };
             });
@@ -82,9 +83,19 @@ const DriverSeatMap = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+                    <style>{`
+                    @media (max-width: 900px) {
+                        .seat-page-grid { grid-template-columns: 1fr !important; }
+                        .details-panel { position: static !important; }
+                    }
+                    @media (max-width: 480px) {
+                        .seat-grid-mobile { grid-template-columns: repeat(2, 1fr) !important; }
+                        .seat-container { padding: 1rem !important; }
+                    }
+                `}</style>
+                    <div className="seat-page-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
                         {/* Seat Grid */}
-                        <div style={{
+                        <div className="seat-container" style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(4, 1fr)',
                             gap: '12px',
@@ -94,43 +105,45 @@ const DriverSeatMap = () => {
                             border: '1px solid #e2e8f0',
                             height: 'fit-content'
                         }}>
-                            {seats.map(seat => {
-                                let bgColor = 'white';
-                                let textColor = '#64748b';
-                                if (seat.isOccupied) {
-                                    bgColor = seat.isBoarded ? '#6366F1' : '#F59E0B';
-                                    textColor = 'white';
-                                }
+                            <div className="seat-grid-mobile" style={{ display: 'contents' }}>
+                                {seats.map(seat => {
+                                    let bgColor = 'white';
+                                    let textColor = '#64748b';
+                                    if (seat.isOccupied) {
+                                        bgColor = seat.isBoarded ? '#6366F1' : '#F59E0B';
+                                        textColor = 'white';
+                                    }
 
-                                return (
-                                    <motion.div
-                                        key={seat.id}
-                                        whileHover={{ scale: 1.05 }}
-                                        onClick={() => seat.isOccupied && setSelectedSeatDetails(seat.passenger)}
-                                        style={{
-                                            aspectRatio: '1',
-                                            borderRadius: '10px',
-                                            background: bgColor,
-                                            border: `1px solid ${seat.isOccupied ? 'transparent' : '#cbd5e1'}`,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: textColor,
-                                            fontWeight: 800,
-                                            fontSize: '0.85rem',
-                                            cursor: seat.isOccupied ? 'pointer' : 'default',
-                                            boxShadow: seat.isOccupied ? '0 4px 10px rgba(0,0,0,0.1)' : 'none',
-                                            position: 'relative'
-                                        }}
-                                    >
-                                        {seat.id}
-                                    </motion.div>
-                                );
-                            })}
+                                    return (
+                                        <motion.div
+                                            key={seat.id}
+                                            whileHover={{ scale: 1.05 }}
+                                            onClick={() => seat.isOccupied && setSelectedSeatDetails(seat.passenger)}
+                                            style={{
+                                                aspectRatio: '1',
+                                                borderRadius: '10px',
+                                                background: bgColor,
+                                                border: `1px solid ${seat.isOccupied ? 'transparent' : '#cbd5e1'}`,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: textColor,
+                                                fontWeight: 800,
+                                                fontSize: '0.85rem',
+                                                cursor: seat.isOccupied ? 'pointer' : 'default',
+                                                boxShadow: seat.isOccupied ? '0 4px 10px rgba(0,0,0,0.1)' : 'none',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            {seat.id}
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
                         </div>
 
                         {/* Details Panel */}
-                        <div style={{ position: 'sticky', top: '2rem', height: 'fit-content' }}>
+                        <div className="details-panel" style={{ position: 'sticky', top: '2rem', height: 'fit-content' }}>
                             {selectedSeatDetails ? (
                                 <motion.div
                                     initial={{ opacity: 0, x: 20 }}

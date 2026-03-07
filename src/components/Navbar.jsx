@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bus, User, Users, Menu, X, LayoutDashboard, LogOut, Search, Ticket as TicketIcon } from 'lucide-react';
+import { Bus, User, Users, Menu, X, LayoutDashboard, LogOut, Search, Ticket as TicketIcon, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,10 +45,14 @@ const Navbar = ({ isDriver = false }) => {
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <LayoutDashboard size={24} />
+                        <Bus size={24} />
                     </div>
                     <span style={{ fontSize: '1.5rem', fontWeight: '800', color: '#6366F1', letterSpacing: '-0.5px' }}>
-                        Driver<span style={{ color: 'var(--secondary)' }}>Console</span>
+                        {isDriver ? (
+                            <>Driver<span style={{ color: 'var(--secondary)' }}>Console</span></>
+                        ) : (
+                            <>Smart<span style={{ color: 'var(--secondary)' }}>Bus</span></>
+                        )}
                     </span>
                 </Link>
 
@@ -59,9 +63,11 @@ const Navbar = ({ isDriver = false }) => {
                                 <Link to="/" style={{ fontWeight: '600', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                     <LayoutDashboard size={18} /> Dashboard
                                 </Link>
-                                <Link to="/driver/seats" style={{ fontWeight: '500', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <Users size={18} /> Occupancy
-                                </Link>
+                                {new URLSearchParams(window.location.search).get('busId') && (
+                                    <Link to={`/driver/seats?busId=${new URLSearchParams(window.location.search).get('busId')}`} style={{ fontWeight: '500', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        <Users size={18} /> Occupancy
+                                    </Link>
+                                )}
                             </>
                         ) : (
                             <>
@@ -74,6 +80,11 @@ const Navbar = ({ isDriver = false }) => {
                                 <Link to="/status" style={{ fontWeight: '500', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                     <TicketIcon size={18} /> My Ticket
                                 </Link>
+                                {user?.role?.toLowerCase() === 'admin' && (
+                                    <Link to="/admin" style={{ fontWeight: '700', color: '#10B981', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        <ShieldCheck size={18} /> Admin Panel
+                                    </Link>
+                                )}
                             </>
                         )}
                     </div>
@@ -150,13 +161,20 @@ const Navbar = ({ isDriver = false }) => {
                         {isDriver ? (
                             <>
                                 <Link to="/" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Dashboard</Link>
-                                <Link to="/driver/seats" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Occupancy</Link>
+                                {new URLSearchParams(window.location.search).get('busId') && (
+                                    <Link to={`/driver/seats?busId=${new URLSearchParams(window.location.search).get('busId')}`} onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Occupancy</Link>
+                                )}
                             </>
                         ) : (
                             <>
                                 <Link to="/" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Home</Link>
                                 <Link to="/search" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Book Ticket</Link>
                                 <Link to="/status" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Ticket Status</Link>
+                                {user?.role?.toLowerCase() === 'admin' && (
+                                    <Link to="/admin" onClick={toggleMenu} style={{ fontWeight: '700', fontSize: '1.1rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <ShieldCheck size={20} /> Admin Panel
+                                    </Link>
+                                )}
                                 {user && <Link to="/my-bookings" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>My Bookings</Link>}
                             </>
                         )}
