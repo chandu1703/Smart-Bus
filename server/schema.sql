@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS buses (
     driver_name VARCHAR(100),
     driver_phone VARCHAR(20),
     amenities TEXT, -- Store as JSON string or comma-separated
+    travel_date DATE,
     status ENUM('Scheduled', 'In Transit', 'Completed', 'Cancelled') DEFAULT 'Scheduled'
 );
 
@@ -83,10 +84,11 @@ CREATE TABLE IF NOT EXISTS passengers (
     FOREIGN KEY (bus_id) REFERENCES buses(id)
 );
 
-INSERT INTO buses (name, type, departure_city, arrival_city, departure_time, arrival_time, price, current_lat, current_lng, driver_name, driver_phone, amenities) 
+INSERT INTO buses (name, type, departure_city, arrival_city, departure_time, arrival_time, price, current_lat, current_lng, driver_name, driver_phone, amenities, travel_date) 
 VALUES 
-('TGSRTC Guda', 'Super Luxury A/C', 'Hyderabad', 'Vijayawada', '21:00:00', '03:30:00', 850.00, 17.3730, 78.4760, 'Ramesh Kumar', '9848012345', 'WiFi, AC, Charging Point'),
-('Orange Travels', 'Volo Multi-Axle A/C', 'Bangalore', 'Chennai', '22:30:00', '05:15:00', 1200.00, 12.9716, 77.5946, 'Suresh Babu', '9848054321', 'AC, Water, Snacks, Charging Point'),
-('Neeta Travels', 'Scania A/C Sleeper', 'Mumbai', 'Pune', '19:45:00', '23:00:00', 600.00, 19.0760, 72.8777, 'Vijay Singh', '9555667777', 'WiFi, AC, Bed, Snacks');
+('TGSRTC Guda', 'Super Luxury A/C', 'Hyderabad', 'Vijayawada', '21:00:00', '03:30:00', 850.00, 17.3730, 78.4760, 'Ramesh Kumar', '9848012345', 'WiFi, AC, Charging Point', '2026-03-07'),
+('Orange Travels', 'Volo Multi-Axle A/C', 'Bangalore', 'Chennai', '22:30:00', '05:15:00', 1200.00, 12.9716, 77.5946, 'Suresh Babu', '9848054321', 'AC, Water, Snacks, Charging Point', '2026-03-07'),
+('Neeta Travels', 'Scania A/C Sleeper', 'Mumbai', 'Pune', '19:45:00', '23:00:00', 600.00, 19.0760, 72.8777, 'Vijay Singh', '9555667777', 'WiFi, AC, Bed, Snacks', '2026-03-07'),
+('Nellore Express', 'A/C Sleeper', 'Hyderabad', 'Nellore', '23:00:00', '06:00:00', 1100.00, 17.3730, 78.4760, 'Kiran Yadav', '9123456780', 'AC, Bed, Charging', '2026-03-07');
 
 UPDATE passengers SET scanned_at = NULL, is_active = FALSE;
