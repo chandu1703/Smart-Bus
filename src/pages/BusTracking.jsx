@@ -102,36 +102,50 @@ const BusTracking = () => {
     }, [busId]);
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#F8FAFC', padding: '2rem' }}>
-            <button onClick={() => navigate(-1)} style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}>
+        <div style={{ minHeight: '100vh', backgroundColor: '#F8FAFC', padding: '1.5rem' }}>
+            <style>{`
+                @media (max-width: 768px) {
+                    .tracking-header { font-size: 1.5rem !important; }
+                    .map-container { height: 50vh !important; }
+                    .back-btn { margin-bottom: 0.5rem !important; }
+                }
+            `}</style>
+            <button className="back-btn" onClick={() => navigate(-1)} style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600 }}>
                 <ArrowLeft size={20} /> Back
             </button>
 
-            <h2 style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>Live Tracking – {busName || `Bus #${busId}`}</h2>
+            <h2 className="tracking-header" style={{ marginBottom: '1.5rem', color: 'var(--secondary)', fontSize: '2rem' }}>Live Tracking</h2>
+            <div style={{ marginBottom: '1rem', background: 'white', padding: '1rem', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#10B981', boxShadow: '0 0 10px #10B981' }}></div>
+                <span style={{ fontWeight: 700, color: 'var(--secondary)' }}>{busName || `Bus #${busId}`}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Updating in real-time</span>
+            </div>
 
             {loading && (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
                     <Loader2 className="animate-spin" size={48} color="var(--primary)" />
                 </div>
             )}
 
             {error && (
-                <div style={{ color: 'var(--error)', padding: '1rem', backgroundColor: '#FEF2F2', borderRadius: '8px' }}>
+                <div style={{ color: '#EF4444', padding: '1.5rem', backgroundColor: '#FEF2F2', borderRadius: '12px', border: '1px solid #FEE2E2', fontWeight: 600 }}>
                     {error}
                 </div>
             )}
 
             {location && (
-                <MapContainer center={location} zoom={13} style={{ height: '70vh', width: '100%', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <FlyToLocation position={location} />
-                    <Marker position={location}>
-                        <Popup>{busName || `Bus #${busId}`}</Popup>
-                    </Marker>
-                </MapContainer>
+                <div className="map-container" style={{ height: '70vh', width: '100%', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', border: '1px solid var(--border)' }}>
+                    <MapContainer center={location} zoom={13} style={{ height: '100%', width: '100%' }}>
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <FlyToLocation position={location} />
+                        <Marker position={location}>
+                            <Popup>{busName || `Bus #${busId}`}</Popup>
+                        </Marker>
+                    </MapContainer>
+                </div>
             )}
         </div>
     );

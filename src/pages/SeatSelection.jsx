@@ -79,11 +79,19 @@ const SeatSelection = () => {
         <div style={{ padding: '2rem 0', backgroundColor: 'var(--background)', minHeight: '90vh' }}>
             <style>{`
                 @media (max-width: 900px) {
-                    .seat-selection-container { grid-template-columns: 1fr !important; }
-                    .summary-card { position: fixed !important; bottom: 0; left: 0; right: 0; top: auto !important; z-index: 100 !important; border-radius: 20px 20px 0 0 !important; box-shadow: 0 -10px 25px rgba(0,0,0,0.1) !important; padding: 1.5rem !important; }
-                    .summary-card button { height: 50px !important; }
-                    .back-btn { margin-bottom: 2rem !important; }
-                    .seat-map-card { margin-bottom: 120px !important; }
+                    .seat-selection-container { grid-template-columns: 1fr !important; padding-bottom: 120px; }
+                    .summary-card { position: fixed !important; bottom: 0; left: 0; right: 0; top: auto !important; z-index: 100 !important; border-radius: 20px 20px 0 0 !important; box-shadow: 0 -10px 25px rgba(0,0,0,0.1) !important; padding: 1rem !important; margin-top: 0 !important; }
+                    .summary-card .card { padding: 1rem !important; border: none !important; box-shadow: none !important; }
+                    .summary-card h3 { display: none; }
+                    .summary-content { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+                    .summary-content > div { margin-bottom: 0 !important; padding-bottom: 0 !important; border-bottom: none !important; }
+                    .summary-content button { width: auto !important; flex: 1; margin-top: 0 !important; }
+                    .back-btn { margin-bottom: 1.5rem !important; }
+                    .seat-map-card { margin-bottom: 2rem !important; border: none !important; box-shadow: none !important; background: transparent !important; }
+                }
+                @media (max-width: 480px) {
+                    .seat-selection-container { padding: 0.5rem; }
+                    .seat-map-card h2 { font-size: 1.5rem !important; }
                 }
             `}</style>
             <div className="container seat-selection-container" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem' }}>

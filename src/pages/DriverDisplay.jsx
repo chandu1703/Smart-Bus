@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Smartphone, CheckCircle2, MapPin, Users, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
+import { useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../api/config';
 
 const socket = io(API_BASE_URL, {
@@ -111,16 +112,26 @@ const DriverDisplay = () => {
 
     return (
         <div style={{ backgroundColor: '#0F172A', minHeight: '100vh', color: 'white', padding: '1.5rem', fontFamily: 'monospace' }}>
-            {/* Top Bar */}
             <style>{`
+                @media (max-width: 1024px) {
+                    .display-header { flex-direction: column; align-items: flex-start !important; gap: 1rem; }
+                    .display-main { grid-template-columns: 1fr !important; }
+                    .seat-grid { grid-template-columns: repeat(4, 1fr) !important; max-width: 100% !important; }
+                }
+                @media (max-width: 640px) {
+                    .seat-grid { grid-template-columns: repeat(3, 1fr) !important; }
+                    h1 { font-size: 1.2rem !important; }
+                    .header-controls { width: 100%; flex-direction: column !important; align-items: flex-start !important; gap: 1rem; }
+                    .header-controls button { width: 100%; }
+                }
                 .seat-box:hover .release-btn { opacity: 1 !important; }
             `}</style>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid #1E293B', paddingBottom: '1rem' }}>
+            <header className="display-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid #1E293B', paddingBottom: '1rem' }}>
                 <div>
                     <h1 style={{ color: '#6366F1', fontSize: '1.5rem', margin: 0 }}>SMART-BUS DRIVER CONSOLE</h1>
                     <p style={{ color: '#94A3B8', fontSize: '0.8rem', margin: '4px 0 0' }}>SYSTEM: {isTracking ? 'TRACKING ACTIVE' : 'STANDBY'} | {busDetails?.name || 'Bus-001'}</p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div className="header-controls" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <button
                         onClick={() => setIsTracking(!isTracking)}
                         style={{
@@ -142,7 +153,7 @@ const DriverDisplay = () => {
                 </div>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+            <div className="display-main" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
                 {/* Visual Seat Map */}
                 <div style={{ background: '#1E293B', borderRadius: '16px', padding: '2rem', border: '1px solid #334155' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
@@ -159,7 +170,7 @@ const DriverDisplay = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', maxWidth: '400px', margin: '0 auto' }}>
+                    <div className="seat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', maxWidth: '400px', margin: '0 auto' }}>
                         {seats.map(seat => (
                             <motion.div
                                 key={seat.id}

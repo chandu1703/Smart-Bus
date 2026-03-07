@@ -115,13 +115,20 @@ const Checkout = () => {
     if (selectedSeats.length === 0) return null;
 
     return (
-        <div style={{ padding: '4rem 0', backgroundColor: 'var(--background)' }}>
+        <div style={{ padding: '2rem 1rem', backgroundColor: 'var(--background)', minHeight: '100vh' }}>
+            <style>{`
+                @media (max-width: 768px) {
+                    .checkout-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
+                    .checkout-card { padding: 1.25rem !important; }
+                    h2 { font-size: 1.75rem !important; margin-bottom: 1.5rem !important; }
+                }
+            `}</style>
             <div className="container" style={{ maxWidth: '800px' }}>
                 <h2 style={{ marginBottom: '2rem' }}>Passenger Details</h2>
 
                 <form onSubmit={handleSubmit}>
                     {formData.map((passenger, index) => (
-                        <div key={passenger.seatId} className="card" style={{ marginBottom: '1.5rem' }}>
+                        <div key={passenger.seatId} className="card checkout-card" style={{ marginBottom: '1.5rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
                                 <h3 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <User size={20} color="var(--primary)" />
@@ -130,7 +137,7 @@ const Checkout = () => {
                                 <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Seat {passenger.seatId}</span>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 150px', gap: '1.5rem' }}>
+                            <div className="checkout-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 100px 150px', gap: '1.5rem' }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>FULL NAME</label>
                                     <input
@@ -169,12 +176,12 @@ const Checkout = () => {
                         </div>
                     ))}
 
-                    <div className="card" style={{ marginBottom: '2rem' }}>
+                    <div className="card checkout-card" style={{ marginBottom: '2rem' }}>
                         <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <ShieldCheck size={20} color="var(--accent)" />
                             Travel & Contact Info
                         </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                        <div className="checkout-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>BOARDING FROM</label>
                                 <select
@@ -198,7 +205,7 @@ const Checkout = () => {
                                 </select>
                             </div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <div className="checkout-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>EMAIL ADDRESS</label>
                                 <div style={{ position: 'relative' }}>

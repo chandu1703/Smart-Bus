@@ -102,6 +102,15 @@ const Admin = () => {
 
     return (
         <div style={{ backgroundColor: '#F8FAFC', minHeight: '100vh', padding: '2rem 0' }}>
+            <style>{`
+                @media (max-width: 768px) {
+                    header { flex-direction: column; align-items: flex-start !important; gap: 1.5rem; }
+                    header > div { width: 100%; }
+                    .header-actions { width: 100%; justify-content: space-between; }
+                    .modal-grid { grid-template-columns: 1fr !important; }
+                    .admin-stats { grid-template-columns: 1fr !important; }
+                }
+            `}</style>
             <div className="container">
                 {/* Header */}
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
@@ -109,7 +118,7 @@ const Admin = () => {
                         <h1 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Admin Dashboard</h1>
                         <p style={{ color: 'var(--text-muted)' }}>SmartBus Control Panel — Fleet Management &amp; Analytics</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <div className="header-actions" style={{ display: 'flex', gap: '0.75rem' }}>
                         <button
                             onClick={() => { fetchStats(); fetchBuses(); }}
                             className="btn-outline"
@@ -128,7 +137,7 @@ const Admin = () => {
                 </header>
 
                 {/* Stats Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                <div className="admin-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
                     <StatCard
                         icon={<Bus size={24} color="#6366f1" />}
                         label="Total Buses"
@@ -187,8 +196,8 @@ const Admin = () => {
                             <p style={{ color: 'var(--text-muted)' }}>No buses found. Add your first bus!</p>
                         </div>
                     ) : (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <div className="table-container">
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1000px' }}>
                                 <thead>
                                     <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
                                         {['ID', 'Bus Name', 'Route', 'Date', 'Timing', 'Driver', 'Price', 'Seats', 'Amenities', 'Status'].map(h => (
@@ -287,7 +296,7 @@ const Admin = () => {
                             <form onSubmit={handleAddBus}>
                                 {/* Section: Basic Info */}
                                 <p style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>🚌 Bus Info</p>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div className="modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                                     <div style={{ gridColumn: 'span 2' }}>
                                         <label style={labelStyle}>Bus Name / Operator</label>
                                         <input required type="text" placeholder="e.g. Royal Express" value={newBus.name} onChange={e => setNewBus({ ...newBus, name: e.target.value })} style={inputStyle} />
@@ -310,7 +319,7 @@ const Admin = () => {
 
                                 {/* Section: Route */}
                                 <p style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>📍 Route Details</p>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div className="modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                                     <div>
                                         <label style={labelStyle}>Departure City (Source)</label>
                                         <input required type="text" placeholder="e.g. Hyderabad" value={newBus.departure_city} onChange={e => setNewBus({ ...newBus, departure_city: e.target.value })} style={inputStyle} />
@@ -343,7 +352,7 @@ const Admin = () => {
 
                                 {/* Section: Driver */}
                                 <p style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>👤 Driver Details</p>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div className="modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                                     <div>
                                         <label style={labelStyle}>Driver Name</label>
                                         <input required type="text" placeholder="e.g. Ramesh Kumar" value={newBus.driver_name} onChange={e => setNewBus({ ...newBus, driver_name: e.target.value })} style={inputStyle} />
@@ -357,7 +366,7 @@ const Admin = () => {
                                 {/* Section: Stops */}
                                 <p style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>🔵 Intermediate Boarding Stops</p>
                                 <div style={{ backgroundColor: '#F1F5F9', padding: '1.25rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px auto', gap: '0.75rem', marginBottom: '0.75rem', alignItems: 'end' }}>
+                                    <div className="modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px auto', gap: '0.75rem', marginBottom: '0.75rem', alignItems: 'end' }}>
                                         <div>
                                             <label style={labelStyle}>Stop Name</label>
                                             <input type="text" placeholder="e.g. Kurnool" value={stopInput.name} onChange={e => setStopInput({ ...stopInput, name: e.target.value })} style={{ ...inputStyle }} />

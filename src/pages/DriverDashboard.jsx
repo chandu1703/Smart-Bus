@@ -322,7 +322,7 @@ const DriverDashboard = () => {
                 </motion.div>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div className="main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
 
                 {/* Left Card: Capacity & Seating */}
                 <motion.div
@@ -347,7 +347,7 @@ const DriverDashboard = () => {
                             <TrendingUp size={24} color="#e2e8f0" />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                        <div className="stats-info-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
                             <div className="stat-box" style={{ borderLeft: '4px solid #10b981' }}>
                                 <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>VACANCY</div>
                                 <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#10b981' }}>{stats.availableSeats}</div>
@@ -431,7 +431,7 @@ const DriverDashboard = () => {
                             <Layout size={20} />
                         </div>
                         <h2 style={{ fontSize: '1.25rem' }}>Live Seat Map</h2>
-                        <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>
+                        <div className="seat-legend" style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                 <div style={{ width: 12, height: 12, background: 'white', border: '1px solid #cbd5e1', borderRadius: '3px' }}></div>
                                 FREE
@@ -447,7 +447,7 @@ const DriverDashboard = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) 280px', gap: '2rem' }}>
+                    <div className="seat-map-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) 280px', gap: '2rem' }}>
                         <div style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(4, 1fr)',
@@ -618,7 +618,7 @@ const DriverDashboard = () => {
             </motion.div>
 
             {/* Bottom Controls */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
+            <div className="bottom-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
                 <motion.button
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -715,7 +715,7 @@ const DriverDashboard = () => {
                                 <motion.div
                                     initial={{ scale: 0.9, y: 20 }}
                                     animate={{ scale: 1, y: 0 }}
-                                    className="glass-card"
+                                    className="glass-card scanned-modal"
                                     style={{ padding: '2.5rem', background: 'white' }}
                                 >
                                     <div className="btn-icon" style={{ background: '#dcfce7', color: '#10b981', margin: '0 auto 1.5rem', width: 64, height: 64 }}>
@@ -742,7 +742,7 @@ const DriverDashboard = () => {
                                             </div>
                                         ))}
                                     </div>
-                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <div className="scanned-modal-actions" style={{ display: 'flex', gap: '1rem' }}>
                                         <button
                                             onClick={() => { setScannedPassenger(null); setIsScanning(false); }}
                                             style={{ flex: 1, padding: '1rem', borderRadius: '14px', border: '1px solid #e2e8f0', fontWeight: 600 }}

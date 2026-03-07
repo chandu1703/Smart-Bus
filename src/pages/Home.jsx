@@ -27,11 +27,28 @@ const Home = () => {
             }}>
                 <style>{`
                     @media (max-width: 768px) {
-                        section { padding: 6rem 1rem 10rem !important; }
-                        h1 { fontSize: 2.5rem !important; lineHeight: 1.2 !important; }
-                        .search-grid { gridTemplateColumns: 1fr !important; padding: 1.5rem !important; }
-                        .metrics-grid { gridTemplateColumns: 1fr 1fr !important; gap: 1rem !important; margin-top: -3rem !important; }
-                        .feature-grid { gridTemplateColumns: 1fr !important; gap: 2rem !important; }
+                        section { padding: 6rem 1.5rem 10rem !important; }
+                        h1 { font-size: 2.5rem !important; line-height: 1.2 !important; }
+                        .search-grid { 
+                            grid-template-columns: 1fr !important; 
+                            padding: 1.5rem !important; 
+                            gap: 1rem !important;
+                        }
+                        .search-grid button { 
+                            width: 100% !important; 
+                            padding: 1rem !important;
+                            height: auto !important;
+                        }
+                        .metrics-grid { 
+                            grid-template-columns: 1fr 1fr !important; 
+                            gap: 1rem !important; 
+                            margin-top: -3rem !important; 
+                        }
+                        .feature-grid { grid-template-columns: 1fr !important; gap: 2.5rem !important; }
+                    }
+                    @media (max-width: 480px) {
+                        .metrics-grid { grid-template-columns: 1fr !important; }
+                        h1 { font-size: 2rem !important; }
                     }
                 `}</style>
 
