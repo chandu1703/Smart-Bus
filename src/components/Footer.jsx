@@ -16,11 +16,10 @@ const Footer = () => {
             }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                        <Bus size={32} color="var(--primary)" />
-                        <span style={{ fontSize: '1.5rem', fontWeight: '800' }}>SmartBus</span>
+                        <span style={{ fontSize: '1.5rem', fontWeight: '800' }}>DriverConsole</span>
                     </div>
                     <p style={{ color: '#94A3B8', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-                        The next generation of smart public transportation. QR-based boarding, real-time tracking, and AI-powered helpdesk.
+                        Professional fleet management and driver operations system. Real-time occupancy tracking and journey analytics.
                     </p>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         <Facebook size={20} style={{ cursor: 'pointer' }} />
@@ -32,10 +31,9 @@ const Footer = () => {
                 <div>
                     <h4 style={{ marginBottom: '1.5rem', color: 'white' }}>Quick Links</h4>
                     <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <li><a href="#" style={{ color: '#94A3B8' }}>Search Buses</a></li>
-                        <li><a href="#" style={{ color: '#94A3B8' }}>Ticket Status</a></li>
-                        <li><a href="#" style={{ color: '#94A3B8' }}>Cancellations</a></li>
-                        <li><a href="/admin" style={{ color: '#94A3B8' }}>Admin Panel</a></li>
+                        <li><a href="/" style={{ color: '#94A3B8' }}>Driver Dashboard</a></li>
+                        <li><a href="/driver/seats" style={{ color: '#94A3B8' }}>Seat Occupancy</a></li>
+                        <li><a href="#" style={{ color: '#94A3B8' }}>Route Schedule</a></li>
                     </ul>
                 </div>
 
@@ -59,7 +57,7 @@ const Footer = () => {
                 color: '#64748B',
                 fontSize: '0.9rem'
             }}>
-                © {new Date().getFullYear()} SmartBus System. All rights reserved.
+                © {new Date().getFullYear()} DriverConsole Pro. All rights reserved.
             </div>
         </footer>
     );

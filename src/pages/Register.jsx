@@ -17,7 +17,7 @@ const Register = () => {
         e.preventDefault();
         setLoading(true);
         setError('');
-        const res = await register(name, email, password);
+        const res = await register(name, email, password, 'User'); // Role hardcoded to User for security
         if (res.success) {
             alert('Registration successful! Please login.');
             navigate('/login');
@@ -71,7 +71,7 @@ const Register = () => {
                         </div>
                     </div>
 
-                    <div style={{ marginBottom: '2rem' }}>
+                    <div style={{ marginBottom: '1.25rem' }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>PASSWORD</label>
                         <div style={{ position: 'relative' }}>
                             <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />

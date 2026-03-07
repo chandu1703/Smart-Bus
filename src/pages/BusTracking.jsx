@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -16,6 +17,7 @@ L.Icon.Default.mergeOptions({
     iconUrl: markerIcon,
     shadowUrl: markerShadow,
 });
+import { API_BASE_URL } from '../api/config';
 
 // Helper component to smoothly pan map to new coordinates
 const FlyToLocation = ({ position }) => {
@@ -28,6 +30,13 @@ const FlyToLocation = ({ position }) => {
     return null;
 };
 
+const socket = io(API_BASE_URL, {
+    transports: ['websocket', 'polling'],
+    reconnectionAttempts: 5,
+    timeout: 10000,
+    path: '/socket.io/'
+});
+
 const BusTracking = () => {
     const { busId } = useParams();
     const navigate = useNavigate();
@@ -36,29 +45,60 @@ const BusTracking = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Poll the backend every 5 seconds for fresh coordinates
     useEffect(() => {
-        let intervalId;
-        const fetchLocation = async () => {
+        // Initial fetch to get bus details and current location
+        const fetchInitial = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/buses/track/${busId}`);
+                const res = await fetch(`${API_BASE_URL}/api/buses/track/${busId}`);
                 const data = await res.json();
                 if (res.ok) {
-                    setLocation([data.lat, data.lng]);
                     setBusName(data.name);
-                    setError(null);
-                } else {
-                    setError(data.error || 'Failed to fetch location');
+
+                    // Check if tracking should be active (1 hr before travel_date + departure_time)
+                    if (data.travel_date && data.departure_time) {
+                        const travelDateTime = new Date(`${data.travel_date.split('T')[0]}T${data.departure_time}`);
+                        const now = new Date();
+                        const timeDiff = travelDateTime - now;
+                        const oneHourInMs = 60 * 60 * 1000;
+
+                        if (timeDiff > oneHourInMs) {
+                            setError(`Live tracking will be available 1 hour before departure (${new Date(travelDateTime - oneHourInMs).toLocaleTimeString()}).`);
+                            setLoading(false);
+                            return;
+                        }
+                    }
+
+                    if (data.lat && data.lng) {
+                        setLocation([data.lat, data.lng]);
+                    } else {
+                        setError('Bus location not yet available.');
+                    }
                 }
                 setLoading(false);
             } catch (e) {
-                setError('Network error');
+                console.error('Initial fetch failed', e);
+                setError('Failed to load tracking data.');
                 setLoading(false);
             }
         };
-        fetchLocation();
-        intervalId = setInterval(fetchLocation, 5000);
-        return () => clearInterval(intervalId);
+
+        fetchInitial();
+
+        // Join the bus tracking room
+        socket.emit('join-bus', busId);
+
+        // Listen for real-time updates
+        socket.on('location-update', (data) => {
+            if (data.busId == busId) {
+                setLocation([data.lat, data.lng]);
+                setError(null);
+            }
+        });
+
+        return () => {
+            socket.off('location-update');
+            socket.emit('leave-bus', busId);
+        };
     }, [busId]);
 
     return (

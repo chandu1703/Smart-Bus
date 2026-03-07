@@ -4,39 +4,56 @@ import { motion } from 'framer-motion';
 import { useBooking } from '../context/BookingContext';
 import { Smartphone, Info, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '../api/config';
 
 const SEAT_PRICE = 1200;
 
 const SeatSelection = () => {
     const navigate = useNavigate();
-    const { selectedBus, selectedSeats, setSelectedSeats } = useBooking();
+    const { selectedBus, selectedSeats, setSelectedSeats, searchData } = useBooking();
 
-    // Mock seat layout (1-20 Seater)
-    const leftSeats = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
-    const rightSeats = [
-        [2, 4], [6, 8], [10, 12], [14, 16], [18, 20]
-    ];
+    // Dynamic seat layout generation
+    const total = selectedBus?.total_seats || 20;
+    const rows = Math.ceil(total / 3);
+    const leftSeats = [];
+    const rightSeats = [];
+
+    for (let r = 0; r < rows; r++) {
+        const base = r * 3 + 1;
+        if (base <= total) leftSeats.push(base);
+        const pair = [];
+        if (base + 1 <= total) pair.push(base + 1);
+        if (base + 2 <= total) pair.push(base + 2);
+        if (pair.length > 0) rightSeats.push(pair);
+    }
 
     const [bookedSeats, setBookedSeats] = useState([]);
     const [loadingSeats, setLoadingSeats] = useState(true);
 
     useEffect(() => {
+        // Clear previously selected seats when entering the page fresh
+        setSelectedSeats([]);
+
         if (selectedBus) {
             fetchBookedSeats();
             const interval = setInterval(fetchBookedSeats, 5000); // Polling for real-time changes
             return () => clearInterval(interval);
         }
-    }, [selectedBus]);
+    }, [selectedBus, setSelectedSeats]);
 
     const fetchBookedSeats = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/buses/${selectedBus.id}/occupied-seats`);
+            const res = await axios.get(`${API_BASE_URL}/api/buses/${selectedBus.id}/occupied-seats`, {
+                params: {
+                    from: searchData.from,
+                    to: searchData.to
+                }
+            });
             const occupied = res.data.map(p => p.seat_number);
             setBookedSeats(occupied);
         } catch (err) {
             console.error('Error fetching seats', err);
-            // Mock fallback if offline
-            setBookedSeats([1, 4, 10, 15]);
+            setBookedSeats([]);
         } finally {
             setLoadingSeats(false);
         }

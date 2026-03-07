@@ -11,9 +11,8 @@ const Home = () => {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        if (searchData.from && searchData.to) {
-            navigate('/search');
-        }
+        // Since the components updateSearch directly, we just navigate
+        navigate('/search');
     };
 
     return (

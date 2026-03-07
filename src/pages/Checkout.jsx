@@ -4,6 +4,7 @@ import { User, Mail, Phone, ShieldCheck, ArrowRight, Loader2 } from 'lucide-reac
 import { useBooking } from '../context/BookingContext';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { API_BASE_URL } from '../api/config';
 
 const Checkout = () => {
     const navigate = useNavigate();
@@ -17,6 +18,9 @@ const Checkout = () => {
         phone: ''
     });
 
+    const [stops, setStops] = useState([]);
+    const [loadingStops, setLoadingStops] = useState(true);
+
     useEffect(() => {
         if (selectedSeats.length > 0) {
             setFormData(selectedSeats.map(seatId => ({
@@ -29,6 +33,32 @@ const Checkout = () => {
             navigate('/');
         }
     }, [selectedSeats, navigate]);
+
+    useEffect(() => {
+        if (selectedBus) {
+            const fetchStops = async () => {
+                try {
+                    const res = await axios.get(`${API_BASE_URL}/api/buses/${selectedBus.id}`);
+                    setStops(res.data.stops || []);
+                    setContactInfo(prev => ({
+                        ...prev,
+                        boarding: searchData.from || selectedBus.departure_city,
+                        destination: searchData.to || selectedBus.arrival_city,
+                        email: user?.email || '',
+                        phone: prev.phone
+                    }));
+                } catch (err) {
+                    console.error('Failed to fetch stops', err);
+                } finally {
+                    setLoadingStops(false);
+                }
+            };
+            fetchStops();
+        }
+    }, [selectedBus, searchData, user]);
+
+    const boardingPoints = selectedBus ? [selectedBus.departure_city, ...stops.map(s => s.stop_name)] : [];
+    const destinationPoints = selectedBus ? [selectedBus.arrival_city, ...stops.map(s => s.stop_name)] : [];
 
     const handleInputChange = (index, field, value) => {
         const updated = [...formData];
@@ -44,26 +74,36 @@ const Checkout = () => {
 
         const bookingData = {
             bookingId,
-            busId: selectedBus?.id || 1,
+            busId: selectedBus.id,
             userId: user?.id || null,
             travelDate: searchData.date,
-            totalAmount: selectedSeats.length * (selectedBus?.price || 1200),
+            totalAmount: selectedSeats.length * selectedBus.price,
             email: contactInfo.email,
             phone: contactInfo.phone,
+            boardingPoint: contactInfo.boarding,
+            droppingPoint: contactInfo.destination,
             passengers: formData
         };
 
         try {
-            // Send to MySQL Backend
-            await axios.post('http://localhost:5000/api/bookings', bookingData);
+            const response = await axios.post(`${API_BASE_URL}/api/bookings`, {
+                ...bookingData,
+                paymentStatus: 'Paid',
+                status: 'Confirmed'
+            });
+            console.log("Booking Response:", response.data);
 
             setPassengerDetails(formData);
             setBookingResult({
                 bookingId,
                 date: searchData.date,
-                totalAmount: bookingData.totalAmount
+                totalAmount: bookingData.totalAmount,
+                boarding: contactInfo.boarding,
+                destination: contactInfo.destination
             });
-            navigate(`/payment/${bookingId}`);
+
+            // Navigate directly to ticket, skipping payment page
+            navigate(`/ticket/${bookingId}`);
         } catch (err) {
             console.error('Booking failed', err);
             alert('Booking failed. Please ensure the MySQL server is running.');
@@ -137,25 +177,25 @@ const Checkout = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>BOARDING FROM</label>
-                                <input
+                                <select
                                     required
-                                    type="text"
-                                    placeholder="e.g. Times Square"
                                     value={contactInfo.boarding}
                                     onChange={(e) => setContactInfo({ ...contactInfo, boarding: e.target.value })}
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', outline: 'none' }}
-                                />
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', outline: 'none', backgroundColor: 'white' }}
+                                >
+                                    {boardingPoints.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>DESTINATION</label>
-                                <input
+                                <select
                                     required
-                                    type="text"
-                                    placeholder="e.g. South Station"
                                     value={contactInfo.destination}
                                     onChange={(e) => setContactInfo({ ...contactInfo, destination: e.target.value })}
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', outline: 'none' }}
-                                />
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', outline: 'none', backgroundColor: 'white' }}
+                                >
+                                    {destinationPoints.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
                             </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>

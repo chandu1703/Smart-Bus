@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bus, User, Menu, X, LayoutDashboard, LogOut, Search } from 'lucide-react';
+import { Bus, User, Users, Menu, X, LayoutDashboard, LogOut, Search, Ticket as TicketIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const Navbar = () => {
+const Navbar = ({ isDriver = false }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,23 +45,36 @@ const Navbar = () => {
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <Bus size={24} />
+                        <LayoutDashboard size={24} />
                     </div>
                     <span style={{ fontSize: '1.5rem', fontWeight: '800', color: '#6366F1', letterSpacing: '-0.5px' }}>
-                        Smart<span style={{ color: 'var(--secondary)' }}>Bus</span>
+                        Driver<span style={{ color: 'var(--secondary)' }}>Console</span>
                     </span>
                 </Link>
 
                 <div className="nav-links">
                     <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                        <Link to="/search" style={{ fontWeight: '500', color: 'var(--text-muted)' }}>Find Buses</Link>
-                        <Link to="/status" style={{ fontWeight: '500', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <Search size={18} /> Ticket Status
-                        </Link>
-                        {user?.role === 'Admin' && (
-                            <Link to="/admin" style={{ fontWeight: '500', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <LayoutDashboard size={18} /> Admin
-                            </Link>
+                        {isDriver ? (
+                            <>
+                                <Link to="/" style={{ fontWeight: '600', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <LayoutDashboard size={18} /> Dashboard
+                                </Link>
+                                <Link to="/driver/seats" style={{ fontWeight: '500', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <Users size={18} /> Occupancy
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/" style={{ fontWeight: '600', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <Bus size={18} /> Home
+                                </Link>
+                                <Link to="/search" style={{ fontWeight: '500', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <Search size={18} /> Book Ticket
+                                </Link>
+                                <Link to="/status" style={{ fontWeight: '500', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <TicketIcon size={18} /> My Ticket
+                                </Link>
+                            </>
                         )}
                     </div>
 
@@ -134,9 +147,19 @@ const Navbar = () => {
                             boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
                         }}
                     >
-                        <Link to="/search" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Find Buses</Link>
-                        <Link to="/status" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Ticket Status</Link>
-                        {user?.role === 'Admin' && <Link to="/admin" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Admin Dashboard</Link>}
+                        {isDriver ? (
+                            <>
+                                <Link to="/" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Dashboard</Link>
+                                <Link to="/driver/seats" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Occupancy</Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Home</Link>
+                                <Link to="/search" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Book Ticket</Link>
+                                <Link to="/status" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>Ticket Status</Link>
+                                {user && <Link to="/my-bookings" onClick={toggleMenu} style={{ fontWeight: '600', fontSize: '1.1rem' }}>My Bookings</Link>}
+                            </>
+                        )}
                         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
                             {user ? (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

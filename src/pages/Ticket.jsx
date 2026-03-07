@@ -7,6 +7,7 @@ import { useBooking } from '../context/BookingContext';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
+import { API_BASE_URL } from '../api/config';
 
 // Fix for default marker icons in Leaflet
 import L from 'leaflet';
@@ -28,13 +29,12 @@ const TrackingMap = ({ busId }) => {
     useEffect(() => {
         const fetchPosition = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/buses/track/${busId}`);
+                const res = await axios.get(`${API_BASE_URL}/api/buses/track/${busId}`);
                 setPosition([res.data.lat, res.data.lng]);
                 setLoading(false);
             } catch (err) {
                 console.error('Tracking error', err);
-                // Fallback for demo if server not running
-                setPosition([40.7128, -74.0060]);
+                setPosition(null);
                 setLoading(false);
             }
         };
@@ -62,8 +62,30 @@ const Ticket = () => {
     const { bookingId } = useParams();
     const { bookingResult, selectedBus, searchData, passengerDetails, selectedSeats } = useBooking();
     const [showMap, setShowMap] = useState(false);
+    const [dbBooking, setDbBooking] = useState(null);
+    const [loading, setLoading] = useState(!bookingResult);
 
-    if (!bookingResult) {
+    useEffect(() => {
+        if (!bookingResult && bookingId) {
+            const fetchBooking = async () => {
+                try {
+                    const res = await axios.get(`${API_BASE_URL}/api/bookings/status/${bookingId}`);
+                    setDbBooking(res.data);
+                } catch (err) {
+                    console.error("Failed to fetch booking fallback", err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchBooking();
+        }
+    }, [bookingId, bookingResult]);
+
+    if (loading) return <div style={{ padding: '5rem', textAlign: 'center' }}><Loader2 className="animate-spin" size={48} /></div>;
+
+    const data = bookingResult || dbBooking;
+
+    if (!data) {
         return (
             <div style={{ padding: '5rem', textAlign: 'center' }}>
                 <h2>Ticket Not Found</h2>
@@ -71,6 +93,25 @@ const Ticket = () => {
             </div>
         );
     }
+
+    // Map DB fields to match component expectations if needed
+    const displayData = bookingResult ? {
+        from: searchData.from,
+        to: searchData.to,
+        date: searchData.date,
+        busName: selectedBus?.name,
+        seats: selectedSeats,
+        passengers: passengerDetails.map(p => ({ ...p, seat_number: p.seatId })),
+        busId: selectedBus?.id
+    } : {
+        from: dbBooking.departure_city,
+        to: dbBooking.arrival_city,
+        date: new Date(dbBooking.travel_date).toLocaleDateString(),
+        busName: dbBooking.bus_name,
+        seats: dbBooking.passengers?.map(p => p.seat_number) || [],
+        passengers: dbBooking.passengers || [],
+        busId: dbBooking.bus_id
+    };
 
     return (
         <div style={{ padding: '4rem 0', backgroundColor: '#F1F5F9', minHeight: 'calc(100vh - 80px)' }}>
@@ -113,8 +154,8 @@ const Ticket = () => {
                     <div style={{ padding: '2rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', position: 'relative' }}>
                             <div>
-                                <h3 style={{ fontSize: '1.5rem' }}>{searchData.from}</h3>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Dep: {selectedBus?.departure || 'N/A'}</p>
+                                <h3 style={{ fontSize: '1.5rem' }}>{displayData.from}</h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Bus: {displayData.busName}</p>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                                 <div style={{ width: '40%', height: '1px', borderTop: '2px dashed var(--border)', position: 'relative' }}>
@@ -124,8 +165,8 @@ const Ticket = () => {
                                 </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <h3 style={{ fontSize: '1.5rem' }}>{searchData.to}</h3>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Arr: {selectedBus?.arrival || 'N/A'}</p>
+                                <h3 style={{ fontSize: '1.5rem' }}>{displayData.to}</h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Booking ID: {bookingId}</p>
                             </div>
                         </div>
 
@@ -134,21 +175,21 @@ const Ticket = () => {
                                 <p style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>TRAVEL DATE</p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <Calendar size={18} color="var(--primary)" />
-                                    <span style={{ fontWeight: '600' }}>{searchData.date}</span>
+                                    <span style={{ fontWeight: '600' }}>{displayData.date}</span>
                                 </div>
                             </div>
                             <div>
                                 <p style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>SEATS</p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <CheckCircle2 size={18} color="var(--accent)" />
-                                    <span style={{ fontWeight: '600' }}>{selectedSeats.join(', ')}</span>
+                                    <span style={{ fontWeight: '600' }}>{displayData.seats.join(', ')}</span>
                                 </div>
                             </div>
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', backgroundColor: 'var(--background)', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
                             <div style={{ backgroundColor: 'white', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                                <QRCodeSVG value={`BS-${bookingId}`} size={80} level="H" />
+                                <QRCodeSVG value={bookingId} size={80} level="H" />
                             </div>
                             <div>
                                 <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: '600' }}>Smart Entry QR</p>
@@ -169,17 +210,17 @@ const Ticket = () => {
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
                                 >
-                                    <TrackingMap busId={selectedBus?.id || 1} />
+                                    <TrackingMap busId={displayData.busId || 1} />
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
                         <div style={{ marginTop: '2rem' }}>
                             <p style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '1rem' }}>PASSENGERS</p>
-                            {passengerDetails?.map((p, i) => (
+                            {displayData.passengers?.map((p, i) => (
                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
                                     <span>{p.name} ({p.gender}, {p.age})</span>
-                                    <span style={{ fontWeight: '600' }}>Seat {p.seatId}</span>
+                                    <span style={{ fontWeight: '600' }}>Seat {p.seat_number}</span>
                                 </div>
                             ))}
                         </div>

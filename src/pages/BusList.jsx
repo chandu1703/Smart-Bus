@@ -4,6 +4,7 @@ import { Bus, Clock, MapPin, Star, Wifi, Coffee, Battery, ChevronRight, ArrowRig
 import { motion } from 'framer-motion';
 import { useBooking } from '../context/BookingContext';
 import axios from 'axios';
+import { API_BASE_URL } from '../api/config';
 
 const BusList = () => {
     const navigate = useNavigate();
@@ -14,30 +15,32 @@ const BusList = () => {
     useEffect(() => {
         const fetchBuses = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/buses');
+                const res = await axios.get(`${API_BASE_URL}/api/buses`, {
+                    params: {
+                        from: searchData.from,
+                        to: searchData.to,
+                        date: searchData.date
+                    }
+                });
 
                 const mappedBuses = res.data.map(bus => ({
                     id: bus.id,
                     name: bus.name,
                     type: bus.type,
-                    departure: bus.departure_time.substring(0, 5),
-                    arrival: bus.arrival_time.substring(0, 5),
+                    departure: bus.departure_time?.substring(0, 5) || '00:00',
+                    arrival: bus.arrival_time?.substring(0, 5) || '00:00',
                     price: parseFloat(bus.price),
-                    rating: (4 + Math.random()).toFixed(1),
-                    reviews: Math.floor(Math.random() * 200) + 10,
+                    rating: '4.5',
+                    reviews: '120',
                     seatsAvailable: bus.total_seats,
-                    features: ['wifi', 'water', 'charging'],
+                    features: bus.amenities ? bus.amenities.split(',') : ['wifi'],
                     departure_city: bus.departure_city,
                     arrival_city: bus.arrival_city,
-                    duration: 'approx. 8h'
+                    duration: 'approx. 8h',
+                    total_seats: bus.total_seats
                 }));
 
-                const filtered = mappedBuses.filter(bus =>
-                    bus.departure_city.toLowerCase().includes(searchData.from?.toLowerCase() || '') &&
-                    bus.arrival_city.toLowerCase().includes(searchData.to?.toLowerCase() || '')
-                );
-
-                setBuses(filtered);
+                setBuses(mappedBuses);
             } catch (err) {
                 console.error('Failed to fetch buses', err);
             } finally {

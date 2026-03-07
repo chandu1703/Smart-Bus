@@ -14,7 +14,7 @@ import TicketStatus from './pages/TicketStatus';
 import Payment from './pages/Payment';
 import AiHelpdesk from './components/AiHelpdesk';
 import BusTracking from './pages/BusTracking';
-import DriverDisplay from './pages/DriverDisplay';
+import BookingHistory from './pages/BookingHistory';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BookingProvider } from './context/BookingContext';
 
@@ -22,7 +22,7 @@ const PrivateRoute = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
-  if (adminOnly && user.role !== 'Admin') return <Navigate to="/" />;
+  if (adminOnly && user.role?.toLowerCase() !== 'admin') return <Navigate to="/" />;
   return children;
 };
 
@@ -50,8 +50,16 @@ function App() {
                   }
                 />
                 <Route path="/track/:busId" element={<BusTracking />} />
-                <Route path="/driver" element={<DriverDisplay />} />
                 <Route path="/payment/:bookingId" element={<Payment />} />
+                <Route path="/ticket/:bookingId" element={<Ticket />} />
+                <Route
+                  path="/my-bookings"
+                  element={
+                    <PrivateRoute>
+                      <BookingHistory />
+                    </PrivateRoute>
+                  }
+                />
                 <Route
                   path="/admin"
                   element={

@@ -1,51 +1,46 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bus, Search, CheckCircle2, XCircle, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Bus, Search, CheckCircle2, XCircle, ArrowRight, Loader2, AlertCircle, Map as MapIcon, Calendar, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { QRCodeSVG } from 'qrcode.react';
 import axios from 'axios';
+import { API_BASE_URL } from '../api/config';
 
 const TicketStatus = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [bookingId, setBookingId] = useState('');
     const [loading, setLoading] = useState(false);
     const [ticketDetails, setTicketDetails] = useState(null);
     const [error, setError] = useState('');
     const [cancelling, setCancelling] = useState(false);
 
-    const handleSearch = async (e) => {
-        e.preventDefault();
-        if (!bookingId) return;
+    useEffect(() => {
+        // Auto-search if bookingId is passed in state (from Booking History)
+        if (location.state?.bookingId) {
+            setBookingId(location.state.bookingId);
+            performSearch(location.state.bookingId);
+        }
+    }, [location.state]);
+
+    const performSearch = async (id) => {
         setLoading(true);
         setError('');
-        setTicketDetails(null);
-
         try {
-            const res = await axios.get(`http://localhost:5000/api/bookings/status/${bookingId.toUpperCase()}`);
+            const res = await axios.get(`${API_BASE_URL}/api/bookings/status/${id.toUpperCase()}`);
             setTicketDetails(res.data);
         } catch (err) {
             console.error('Search failed', err);
-            // Fallback for demo if MySQL is offline
-            if (bookingId.toUpperCase().includes('DEMO')) {
-                setTicketDetails({
-                    booking_id: bookingId.toUpperCase(),
-                    status: 'Confirmed',
-                    departure_city: 'New York',
-                    arrival_city: 'Boston',
-                    departure_time: '09:00 AM',
-                    arrival_time: '02:00 PM',
-                    travel_date: new Date(),
-                    bus_name: 'SmartBus Express',
-                    total_amount: 1200,
-                    passengers: [
-                        { name: 'John Doe', gender: 'Male', age: 28, seat_number: 5 }
-                    ]
-                });
-            } else {
-                setError('Ticket not found. Try searching with "DEMO" to see a preview.');
-            }
+            setError('Ticket not found. Please check your Booking ID.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (!bookingId) return;
+        performSearch(bookingId);
     };
 
     const handleCancel = async () => {
@@ -53,7 +48,7 @@ const TicketStatus = () => {
 
         setCancelling(true);
         try {
-            await axios.post(`http://localhost:5000/api/bookings/cancel/${ticketDetails.booking_id}`);
+            await axios.post(`${API_BASE_URL}/api/bookings/cancel/${ticketDetails.booking_id}`);
             setTicketDetails({ ...ticketDetails, status: 'Cancelled' });
             alert('Ticket cancelled successfully.');
         } catch (err) {
@@ -93,11 +88,11 @@ const TicketStatus = () => {
                 <AnimatePresence>
                     {ticketDetails && (
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             className="card"
-                            style={{ overflow: 'hidden', padding: 0 }}
+                            style={{ overflow: 'hidden', padding: 0, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
                         >
                             <div style={{
                                 padding: '1.5rem',
@@ -140,7 +135,10 @@ const TicketStatus = () => {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', padding: '1.5rem 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', marginBottom: '2rem' }}>
                                     <div>
                                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>TRAVEL DATE</p>
-                                        <p style={{ fontWeight: '600' }}>{new Date(ticketDetails.travel_date).toLocaleDateString()}</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Calendar size={18} color="var(--primary)" />
+                                            <span style={{ fontWeight: '600' }}>{new Date(ticketDetails.travel_date).toLocaleDateString()}</span>
+                                        </div>
                                     </div>
                                     <div>
                                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>OPERATOR</p>
@@ -148,20 +146,30 @@ const TicketStatus = () => {
                                     </div>
                                 </div>
 
+                                <div style={{ display: 'flex', gap: '2rem', backgroundColor: '#F8FAFC', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem', alignItems: 'center' }}>
+                                    <div style={{ backgroundColor: 'white', padding: '8px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                        <QRCodeSVG value={ticketDetails.booking_id} size={100} level="H" />
+                                    </div>
+                                    <div>
+                                        <p style={{ fontWeight: '700', marginBottom: '0.25rem' }}>Smart Entry QR</p>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Show this at boarding for verification</p>
+                                    </div>
+                                </div>
+
                                 <div style={{ marginBottom: '2rem' }}>
                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '1rem' }}>PASSENGERS</p>
                                     {ticketDetails.passengers?.map((p, i) => (
                                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
-                                            <span>{p.name} ({p.gender}, {p.age})</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><User size={14} /> {p.name} ({p.gender}, {p.age})</span>
                                             <span style={{ fontWeight: '600' }}>Seat {p.seat_number}</span>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--background)', padding: '1rem', borderRadius: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--background)', padding: '1.5rem', borderRadius: '12px' }}>
                                     <div>
                                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>TOTAL AMOUNT PAID</p>
-                                        <p style={{ fontSize: '1.25rem', fontWeight: '800' }}>₹{ticketDetails.total_amount}</p>
+                                        <p style={{ fontSize: '1.5rem', fontWeight: '800' }}>₹{ticketDetails.total_amount}</p>
                                     </div>
                                     <div style={{ display: 'flex', gap: '1rem' }}>
                                         {ticketDetails.status === 'Confirmed' && (
@@ -169,8 +177,9 @@ const TicketStatus = () => {
                                                 <button
                                                     onClick={() => navigate(`/track/${ticketDetails.bus_id}`)}
                                                     className="btn-primary"
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                                 >
-                                                    Track Bus
+                                                    <MapIcon size={18} /> Track Bus
                                                 </button>
                                                 <button
                                                     onClick={handleCancel}
@@ -178,7 +187,7 @@ const TicketStatus = () => {
                                                     className="btn-outline"
                                                     style={{ borderColor: '#DC2626', color: '#DC2626' }}
                                                 >
-                                                    {cancelling ? <Loader2 className="animate-spin" /> : 'CANCEL TICKET'}
+                                                    {cancelling ? <Loader2 className="animate-spin" /> : 'CANCEL'}
                                                 </button>
                                             </>
                                         )}

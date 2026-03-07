@@ -34,6 +34,7 @@ const CityAutocomplete = ({ value, onChange, placeholder, icon: Icon, label }) =
     useEffect(() => {
         if (query !== value) {
             searchCity(query);
+            onChange(query);
         }
     }, [query]);
 

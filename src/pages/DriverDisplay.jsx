@@ -2,31 +2,71 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Smartphone, CheckCircle2, MapPin, Users, ArrowRight } from 'lucide-react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
+import { API_BASE_URL } from '../api/config';
+
+const socket = io(API_BASE_URL, {
+    transports: ['websocket', 'polling'],
+    path: '/socket.io/'
+});
 
 const DriverDisplay = () => {
     const [busDetails, setBusDetails] = useState(null);
     const [seats, setSeats] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentPos, setCurrentPos] = useState({ lat: 12.9716, lng: 77.5946 });
 
-    // Mock Bus ID for driver (normally passed via login or route)
-    const BUS_ID = 1;
+    // Use URL param or default to 1
+    const { id } = useParams();
+    const BUS_ID = id || 1;
+    const [isTracking, setIsTracking] = useState(false);
+
+    useEffect(() => {
+        let watchId = null;
+
+        if (isTracking && navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    setCurrentPos({ lat: latitude, lng: longitude });
+                    socket.emit('update-location', { busId: BUS_ID, lat: latitude, lng: longitude });
+                },
+                (err) => console.error(err),
+                { enableHighAccuracy: true }
+            );
+        } else if (!isTracking) {
+            // Fallback: Simulation only if not tracking for demo purposes
+            const moveInterval = setInterval(() => {
+                setCurrentPos(prev => {
+                    const next = { lat: prev.lat + 0.0001, lng: prev.lng + 0.0001 };
+                    socket.emit('update-location', { busId: BUS_ID, lat: next.lat, lng: next.lng });
+                    return next;
+                });
+            }, 5000);
+            return () => clearInterval(moveInterval);
+        }
+
+        return () => {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        };
+    }, [isTracking, BUS_ID]);
 
     useEffect(() => {
         fetchSeatStatus();
-        const interval = setInterval(fetchSeatStatus, 5000); // Polling for real-time hardware updates
+        const interval = setInterval(fetchSeatStatus, 5000);
         return () => clearInterval(interval);
-    }, []);
+    }, [BUS_ID]);
 
     const fetchSeatStatus = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/buses/track/${BUS_ID}`);
+            const res = await axios.get(`${API_BASE_URL}/api/buses/track/${BUS_ID}`);
             setBusDetails(res.data);
 
             // Fetch actual occupied seats from DB
-            const occupiedRes = await axios.get(`http://localhost:5000/api/buses/${BUS_ID}/occupied-seats`);
+            const occupiedRes = await axios.get(`${API_BASE_URL}/api/buses/${BUS_ID}/occupied-seats`);
             const occupiedData = occupiedRes.data;
 
-            const totalSeats = 20;
+            const totalSeats = res.data.total_seats || 40;
             const updatedSeats = Array.from({ length: totalSeats }, (_, i) => {
                 const seatNum = i + 1;
                 const occInfo = occupiedData.find(p => p.seat_number === seatNum);
@@ -55,7 +95,7 @@ const DriverDisplay = () => {
 
     const handleDrop = async (seatNumber) => {
         try {
-            await axios.post('http://localhost:5000/api/passengers/drop', {
+            await axios.post(`${API_BASE_URL}/api/passengers/drop`, {
                 busId: BUS_ID,
                 seatNumber
             });
@@ -78,11 +118,27 @@ const DriverDisplay = () => {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid #1E293B', paddingBottom: '1rem' }}>
                 <div>
                     <h1 style={{ color: '#6366F1', fontSize: '1.5rem', margin: 0 }}>SMART-BUS DRIVER CONSOLE</h1>
-                    <p style={{ color: '#94A3B8', fontSize: '0.8rem', margin: '4px 0 0' }}>SYSTEM: ACTIVE | {busDetails?.name || 'Bus-001'}</p>
+                    <p style={{ color: '#94A3B8', fontSize: '0.8rem', margin: '4px 0 0' }}>SYSTEM: {isTracking ? 'TRACKING ACTIVE' : 'STANDBY'} | {busDetails?.name || 'Bus-001'}</p>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{new Date().toLocaleTimeString()}</div>
-                    <div style={{ color: '#10B981', fontSize: '0.7rem' }}>● HARDWARE SYNCED</div>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <button
+                        onClick={() => setIsTracking(!isTracking)}
+                        style={{
+                            padding: '0.5rem 1.5rem',
+                            borderRadius: '8px',
+                            backgroundColor: isTracking ? '#EF4444' : '#10B981',
+                            color: 'white',
+                            border: 'none',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {isTracking ? 'STOP TRIP & TRACKING' : 'START TRIP & TRACKING'}
+                    </button>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{new Date().toLocaleTimeString()}</div>
+                        <div style={{ color: '#10B981', fontSize: '0.7rem' }}>● HARDWARE SYNCED</div>
+                    </div>
                 </div>
             </header>
 
@@ -184,7 +240,7 @@ const DriverDisplay = () => {
                         onClick={async () => {
                             const emptySeat = seats.find(s => !s.isOccupied);
                             if (emptySeat) {
-                                await axios.post('http://localhost:5000/api/bookings/walk-on', {
+                                await axios.post(`${API_BASE_URL}/api/bookings/walk-on`, {
                                     busId: BUS_ID,
                                     seatNumber: emptySeat.id,
                                     destination: 'Smart City Terminal',
